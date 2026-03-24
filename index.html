@@ -1,69 +1,327 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>hub</title>
-    <style>
-      :root {
-        --bg: #f4f4f6;
-        --card: #ffffff;
-        --text: #151515;
-        --muted: #5f6470;
-        --line: #e6e8ee;
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Twitter 视频下载</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      /* 推特蓝渐变背景 */
+      background: linear-gradient(135deg, #15202B 0%, #1DA1F2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(16px, 4vw, 40px);
+    }
+    .container {
+      background: #fff;
+      border-radius: 16px;
+      padding: clamp(32px, 5vw, 72px) clamp(32px, 6vw, 96px);
+      width: 90vw;
+      max-width: 900px;
+      min-height: 85vh;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 8px;
+      font-size: clamp(24px, 5vw, 32px);
+      color: #1DA1F2; /* 推特蓝 */
+    }
+    .subtitle {
+      text-align: center;
+      color: #888;
+      margin-bottom: 32px;
+      font-size: 14px;
+    }
+    textarea {
+      width: 100%;
+      padding: 20px;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      font-size: 16px;
+      resize: none;
+      min-height: clamp(140px, 20vh, 240px);
+      transition: border-color 0.3s;
+      margin-bottom: 24px;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: #1DA1F2;
+    }
+    textarea::placeholder { color: #bbb; }
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      background: linear-gradient(135deg, #1DA1F2 0%, #0c85d0 100%);
+      color: #fff;
+    }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(29,161,242,0.4); }
+    .btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none; box-shadow: none; }
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid #fff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: #fff2f0;
+      border: 1px solid #ffccc7;
+      border-radius: 8px;
+      color: #ff4d4f;
+      font-size: 14px;
+    }
+    .success {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: #f6ffed;
+      border: 1px solid #b7eb8f;
+      border-radius: 8px;
+      color: #389e0d;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .tip {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid #f0f0f0;
+      color: #999;
+    }
+    .tip-title {
+      color: #666;
+      font-weight: 600;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+    .tip-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .tip-panel {
+      background: #f7fbff;
+      border: 1px solid #e6eef7;
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .tip-subtitle {
+      margin-bottom: 8px;
+      color: #4a4a4a;
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .tip ol {
+      margin-left: 20px;
+      line-height: 1.9;
+      color: #666;
+      font-size: 14px;
+    }
+    .tip li + li { margin-top: 4px; }
+
+    @media (min-width: 860px) {
+      .tip-grid {
+        grid-template-columns: 1fr 1fr;
       }
-      * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
-        color: var(--text);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Twitter/X 视频下载</h1>
+    <p class="subtitle">粘贴帖子链接，原画质保存视频</p>
+
+    <textarea id="urlInput" placeholder="粘贴帖子链接，例如 https://x.com/用户名/status/..."></textarea>
+
+    <button class="btn" id="downloadBtn" onclick="downloadVideo()">
+      下载视频
+    </button>
+
+    <div id="error" class="error" style="display: none;"></div>
+    <div id="result" class="success" style="display: none;"></div>
+
+    <div class="tip">
+      <div class="tip-title">使用方法</div>
+      <div class="tip-grid">
+        <div class="tip-panel">
+          <div class="tip-subtitle">PC 浏览器</div>
+          <ol>
+            <li>直接复制浏览器地址栏的帖子 URL</li>
+            <li>粘贴到上方输入框，点击下载</li>
+            <li>下载完成后在浏览器下载管理中查看</li>
+          </ol>
+        </div>
+        <div class="tip-panel">
+          <div class="tip-subtitle">手机浏览器</div>
+          <ol>
+            <li>在 X App 中点分享 → 复制链接</li>
+            <li>回到本页粘贴，点击下载</li>
+            <li>若跳转到播放页，点击右下角「⋮」选择下载视频</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 阿里云函数计算地址
+    const API_BASE = 'https://twitterdownlaod-yjtuddrrlh.cn-hangzhou.fcapp.run';
+    const urlInputEl = document.getElementById('urlInput');
+    const downloadBtnEl = document.getElementById('downloadBtn');
+    const errorEl = document.getElementById('error');
+    const resultEl = document.getElementById('result');
+
+    function extractTwitterUrl(text) {
+      const raw = String(text || '').trim();
+      if (!raw) return '';
+      const matched = raw.match(/https?:\/\/(?:www\.|mobile\.)?(?:twitter\.com|x\.com)\/[^\s]+/i);
+      const candidate = (matched ? matched[0] : raw).replace(/[),.;]+$/, '');
+      return candidate;
+    }
+
+    function showError(msg) {
+      errorEl.textContent = msg;
+      errorEl.style.display = 'block';
+    }
+
+    function hideError() {
+      errorEl.style.display = 'none';
+    }
+
+    function showResult(msg) {
+      resultEl.textContent = msg;
+      resultEl.style.display = 'block';
+    }
+
+    function hideResult() {
+      resultEl.style.display = 'none';
+    }
+
+    async function fetchWithTimeout(url, options, timeoutMs) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const response = await fetch(url, { ...(options || {}), signal: controller.signal });
+        return response;
+      } finally {
+        clearTimeout(timer);
       }
-      main {
-        width: min(900px, calc(100% - 32px));
-        margin: 40px auto;
+    }
+
+    function triggerDownload(blob, filename) {
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    }
+
+    async function downloadBlob(sourceUrl, filename, options) {
+      const response = await fetchWithTimeout(sourceUrl, options || {}, 120000);
+      if (!response.ok) {
+        throw new Error(`下载失败(${response.status})`);
       }
-      h1 {
-        margin: 0 0 8px;
-        font-size: 34px;
+      const blob = await response.blob();
+      triggerDownload(blob, filename);
+    }
+
+    async function downloadVideo() {
+      const extractedUrl = extractTwitterUrl(urlInputEl.value);
+      hideError();
+      hideResult();
+
+      if (!extractedUrl) {
+        showError('请粘贴 Twitter 链接');
+        return;
       }
-      p {
-        margin: 0;
-        color: var(--muted);
+      urlInputEl.value = extractedUrl;
+
+      downloadBtnEl.disabled = true;
+      downloadBtnEl.innerHTML = '<span class="spinner"></span>正在解析...';
+
+      try {
+        const res = await fetchWithTimeout(API_BASE + '/api/resolve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: extractedUrl })
+        }, 30000);
+
+        let data;
+        try {
+          data = await res.json();
+        } catch {
+          throw new Error('后端返回了非 JSON 响应');
+        }
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || '解析失败');
+        }
+
+        const videoUrl = data.data.url;
+        const filename = data.data.filename || 'twitter_video.mp4';
+
+        if (!videoUrl) {
+          throw new Error('无法获取视频地址');
+        }
+
+        downloadBtnEl.innerHTML = '<span class="spinner"></span>正在下载...';
+
+        await downloadBlob(videoUrl, filename, { referrerPolicy: 'no-referrer' });
+
+        showResult(`已保存：${filename}。可在浏览器下载管理中查看。`);
+
+        downloadBtnEl.innerHTML = '✓ 下载完成';
+        downloadBtnEl.style.background = 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)';
+        setTimeout(() => {
+          downloadBtnEl.innerHTML = '下载视频';
+          downloadBtnEl.style.background = 'linear-gradient(135deg, #1DA1F2 0%, #0c85d0 100%)';
+        }, 3000);
+      } catch (err) {
+        showError(err && err.message ? err.message : '未知错误');
+        downloadBtnEl.innerHTML = '下载视频';
+      } finally {
+        downloadBtnEl.disabled = false;
       }
-      .grid {
-        margin-top: 20px;
-        display: grid;
-        gap: 14px;
+    }
+
+    urlInputEl.addEventListener('paste', (e) => {
+      const text = (e.clipboardData || window.clipboardData || {}).getData
+        ? (e.clipboardData || window.clipboardData).getData('text')
+        : '';
+      const extracted = extractTwitterUrl(text);
+      if (extracted) {
+        e.preventDefault();
+        urlInputEl.value = extracted;
       }
-      .card {
-        display: block;
-        text-decoration: none;
-        color: inherit;
-        background: var(--card);
-        border: 1px solid var(--line);
-        border-radius: 14px;
-        padding: 16px 18px;
+    });
+
+    urlInputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        downloadVideo();
       }
-      .card:hover {
-        border-color: #c9d3e0;
-      }
-      .title {
-        margin: 0 0 6px;
-        font-size: 20px;
-      }
-    </style>
-  </head>
-  <body>
-    <main>
-      <h1>hub</h1>
-      <p>Static pages index</p>
-      <section class="grid">
-        <a class="card" href="./apify/">
-          <h2 class="title">apify</h2>
-          <p>Apify Store Insights static snapshot page.</p>
-        </a>
-      </section>
-    </main>
-  </body>
+    });
+  </script>
+</body>
 </html>

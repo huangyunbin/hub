@@ -238,8 +238,8 @@
       setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
     }
 
-    async function downloadBlob(sourceUrl, filename) {
-      const response = await fetchWithTimeout(sourceUrl, {}, 120000);
+    async function downloadBlob(sourceUrl, filename, options) {
+      const response = await fetchWithTimeout(sourceUrl, options || {}, 120000);
       if (!response.ok) {
         throw new Error(`下载失败(${response.status})`);
       }
@@ -288,19 +288,14 @@
 
         downloadBtnEl.innerHTML = '<span class="spinner"></span>正在下载...';
 
-        let downloadedWithProxy = false;
         try {
-          await downloadBlob(videoUrl, filename);
+          await downloadBlob(videoUrl, filename, { referrerPolicy: 'no-referrer' });
         } catch {
           const proxyUrl = `${API_BASE}/api/proxy?url=${encodeURIComponent(videoUrl)}`;
           await downloadBlob(proxyUrl, filename);
-          downloadedWithProxy = true;
         }
 
-        showResult(
-          `已保存：${filename}。可在浏览器下载管理中查看。` +
-          `${downloadedWithProxy ? '（通过代理通道下载）' : ''}`
-        );
+        showResult(`已保存：${filename}。可在浏览器下载管理中查看。`);
 
         downloadBtnEl.innerHTML = '✓ 下载完成';
         downloadBtnEl.style.background = 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)';

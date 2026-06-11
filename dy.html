@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>抖音视频下载 · 高清无水印</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      padding: clamp(16px, 4vw, 48px) clamp(12px, 3vw, 32px);
+      color: #222;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container {
+      background: #fff;
+      border-radius: 20px;
+      padding: clamp(28px, 4vw, 56px) clamp(24px, 5vw, 64px);
+      width: 100%;
+      max-width: 820px;
+      margin: 0 auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    .header { text-align: center; margin-bottom: 36px; }
+    h1 {
+      font-size: clamp(26px, 4.8vw, 34px);
+      color: #1a1a2e;
+      margin-bottom: 10px;
+      letter-spacing: -0.5px;
+    }
+    .subtitle {
+      color: #888;
+      font-size: clamp(14px, 2.6vw, 16px);
+    }
+    .subtitle .highlight {
+      color: #fe2c55;
+      font-weight: 600;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 18px;
+      border: 2px solid #e8e8ea;
+      border-radius: 12px;
+      font-size: 15px;
+      font-family: inherit;
+      resize: none;
+      min-height: 140px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      margin-bottom: 16px;
+      line-height: 1.6;
+      color: #222;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: #fe2c55;
+      box-shadow: 0 0 0 3px rgba(254, 44, 85, 0.08);
+    }
+    textarea::placeholder {
+      color: #bbb;
+      line-height: 1.6;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+      background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+      color: #fff;
+      letter-spacing: 0.5px;
+    }
+    .btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(82, 196, 26, 0.35);
+    }
+    .btn:disabled { opacity: 0.7; cursor: not-allowed; }
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #fff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 8px;
+      vertical-align: -3px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: #fff2f0;
+      border: 1px solid #ffccc7;
+      border-radius: 10px;
+      color: #ff4d4f;
+      font-size: 14px;
+    }
+
+    .tips {
+      margin-top: 40px;
+      padding-top: 32px;
+      border-top: 1px solid #f0f0f0;
+    }
+    .tips-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #222;
+      margin-bottom: 18px;
+    }
+    .tips-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    .tip-card {
+      background: #f7f8fa;
+      border-radius: 14px;
+      padding: 22px 24px;
+    }
+    .tip-card h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #222;
+      margin-bottom: 14px;
+    }
+    .tip-card ol {
+      margin: 0;
+      padding-left: 20px;
+      font-size: 14.5px;
+      line-height: 1.85;
+      color: #555;
+    }
+    .tip-card ol li { margin-bottom: 6px; }
+    .tip-card ol li:last-child { margin-bottom: 0; }
+
+    .tips-notice {
+      margin-top: 20px;
+      padding: 18px 22px;
+      background: #fff7e6;
+      border: 1px solid #ffd591;
+      border-left: 4px solid #fa8c16;
+      border-radius: 10px;
+      color: #555;
+      box-shadow: 0 2px 8px rgba(250, 140, 22, 0.08);
+    }
+    .tips-notice .notice-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #d46b08;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tips-notice .notice-body {
+      font-size: 14px;
+      line-height: 1.7;
+      color: #555;
+    }
+    .tips-notice .notice-body strong { color: #222; }
+
+    .footer {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 12px;
+      color: #aaa;
+    }
+
+    @media (max-width: 560px) {
+      .tips-grid { grid-template-columns: 1fr; }
+      .container { border-radius: 16px; }
+    }
+
+    /* 浏览器引导弹层 */
+    .bg-overlay { position: fixed; inset: 0; background: rgba(15,23,42,.78); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; padding: 24px; z-index: 9999; }
+    .bg-card { background: #fff; border-radius: 20px; padding: 34px 28px; max-width: 380px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.4); }
+    .bg-icon { font-size: 46px; margin-bottom: 12px; }
+    .bg-title { font-size: 20px; font-weight: 700; color: #1f2937; margin-bottom: 12px; }
+    .bg-text { font-size: 15px; line-height: 1.75; color: #555; margin-bottom: 22px; }
+    .bg-text b { color: #fe2c55; }
+    .tips-hint { margin: -8px 0 18px; font-size: 13.5px; color: #999; line-height: 1.6; }
+    /* 手机自带浏览器的软提示条 */
+    .bg-tip { margin-bottom: 16px; padding: 12px 38px 12px 16px; background: #fff7e6; border: 1px solid #ffd591; border-radius: 10px; color: #8c6d1f; font-size: 13.5px; line-height: 1.6; position: relative; display: none; }
+    .bg-tip-x { position: absolute; top: 8px; right: 12px; color: #bbab88; cursor: pointer; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎬 抖音视频下载</h1>
+      <p class="subtitle">粘贴分享文案，一键保存 <span class="highlight">高清无水印</span> 视频</p>
+    </div>
+
+    <div id="bgTip" class="bg-tip">💻 推荐用电脑的谷歌浏览器下载，更稳定。<span class="bg-tip-x" onclick="this.parentNode.style.display='none'">✕</span></div>
+
+    <textarea id="urlInput" placeholder="粘贴抖音分享文案，例如：2.84 复制打开抖音，看看【小朋友很忙的作品】你在干什么 # 喜人奇妙夜  https://v.douyin.com/VOtkMoMdl6s/  CHI:/ a@N.ws"></textarea>
+
+    <button class="btn" id="downloadBtn" onclick="downloadVideo()">
+      下载视频（高清无水印）
+    </button>
+
+    <div id="error" class="error" style="display: none;"></div>
+
+    <div class="tips">
+      <div class="tips-title">使用方法：</div>
+      <p class="tips-hint">💡 友情提示：抖音图文作品仅下载背景音乐，不含图片。</p>
+      <div class="tips-grid">
+        <div class="tip-card">
+          <h3>💻 PC 浏览器</h3>
+          <ol>
+            <li>打开抖音 App，点视频右下角「分享」→「复制链接」</li>
+            <li>粘贴到上方输入框，点击下载</li>
+            <li>下载完成后，在浏览器下载管理中查看</li>
+          </ol>
+        </div>
+        <div class="tip-card">
+          <h3>📱 手机浏览器</h3>
+          <ol>
+            <li>打开抖音 App，点视频右下角「分享」→「复制链接」</li>
+            <li>回到本页粘贴，点击下载</li>
+            <li>视频会保存到相册或下载目录；若跳转到播放页，点击右下角「⋮」选择下载视频</li>
+          </ol>
+        </div>
+      </div>
+      <div class="tips-notice">
+        <div class="notice-title">⚠️ 下载失败？</div>
+        <div class="notice-body">
+          建议切换到 <strong>PC 电脑上的 Chrome 浏览器</strong>重试，兼容性和稳定性最佳。手机浏览器偶尔会有兼容问题。
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">仅供个人学习使用，请勿用于商业用途</div>
+  </div>
+
+  <!-- App 内置浏览器引导弹层 -->
+  <div class="bg-overlay" id="bgOverlay">
+    <div class="bg-card">
+      <div class="bg-icon">🌐</div>
+      <div class="bg-title">请在浏览器中打开</div>
+      <p class="bg-text">点右上角 <b>···</b> → 选择「在浏览器打开」即可下载。<br>推荐用<b>电脑的谷歌浏览器</b>打开，更稳定。</p>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'https://douyin-wnloader-ezxlzqgjyh.cn-hangzhou.fcapp.run';
+
+    // 环境检测：内置浏览器硬拦，手机自带浏览器软提示
+    function bgIsMobile() { return /Android|iPhone|iPad|iPod|Mobile|HarmonyOS|Windows Phone/i.test(navigator.userAgent); }
+    function bgIsInApp() { return /MicroMessenger|Weibo|discover\/|aweme|BytedanceWebview|ToutiaoMicroApp/i.test(navigator.userAgent); }
+    function bgShowOverlay() { document.getElementById('bgOverlay').style.display = 'flex'; }
+    if (bgIsInApp()) bgShowOverlay();
+    else if (bgIsMobile()) document.getElementById('bgTip').style.display = 'block';
+
+    async function downloadVideo() {
+      if (bgIsInApp()) { bgShowOverlay(); return; }
+      const input = document.getElementById('urlInput').value.trim();
+      const btn = document.getElementById('downloadBtn');
+      const errorDiv = document.getElementById('error');
+
+      errorDiv.style.display = 'none';
+
+      if (!input) {
+        showError('请粘贴抖音链接或分享文案');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>解析中...';
+
+      try {
+        const res = await fetch(API_BASE + '/api/resolve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: input })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || '解析失败');
+        }
+
+        let videoUrl = data.data.url || data.data.playUrlNoWatermark;
+        const filename = data.data.filename || 'video.mp4';
+
+        if (!videoUrl) {
+          throw new Error('无法获取视频地址');
+        }
+
+        // 图文作品后端返回 aweme.snssdk.com/...?video_id=<签名CDN直链>，浏览器直接 fetch 会被 CORS 阻断
+        // video_id 参数里已经塞着真 CDN 直链（含 x-expires），x-signature 在外层，拆出来直接用
+        try {
+          const u = new URL(videoUrl);
+          const vid = u.searchParams.get('video_id');
+          if (vid && /\.(douyinstatic|douyinvod)\.com\//.test(vid)) {
+            const sig = u.searchParams.get('x-signature');
+            videoUrl = vid;
+            if (sig && !videoUrl.includes('x-signature=')) {
+              videoUrl += (videoUrl.includes('?') ? '&' : '?') + 'x-signature=' + encodeURIComponent(sig);
+            }
+          }
+        } catch (_) {}
+
+        btn.innerHTML = '<span class="spinner"></span>下载中...';
+
+        const response = await fetch(videoUrl, { referrerPolicy: 'no-referrer' });
+        if (!response.ok) throw new Error('视频下载失败');
+
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+
+        btn.innerHTML = '✓ 下载完成';
+        setTimeout(() => {
+          btn.innerHTML = '下载视频（高清无水印）';
+        }, 3000);
+
+      } catch (err) {
+        showError(err.message);
+        btn.innerHTML = '下载视频（高清无水印）';
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function showError(msg) {
+      const errorDiv = document.getElementById('error');
+      errorDiv.textContent = '❌ ' + msg;
+      errorDiv.style.display = 'block';
+    }
+
+    document.getElementById('urlInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        downloadVideo();
+      }
+    });
+  </script>
+</body>
+</html>
